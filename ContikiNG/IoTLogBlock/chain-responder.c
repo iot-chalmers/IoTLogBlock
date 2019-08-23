@@ -1,3 +1,34 @@
+/*
+ * Copyright (c) 2019, Christos Profentzas - www.chalmers.se/~chrpro 
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include "contiki.h"
 #include "random.h"
 #include "net/ipv6/simple-udp.h"
@@ -10,7 +41,7 @@
 #include "sys/energest.h"
 #include "sys/log.h"
 #include <stdbool.h>
-
+#include "Offchain-message.h"
 
 #define LOG_MODULE "Chain-Resp"
 #define LOG_LEVEL LOG_LEVEL_DBG
@@ -22,8 +53,6 @@
 #define REV(X) ((X << 24) | ((X & 0xff00) << 8) | ((X >> 8) & 0xff00) | (X >> 24))
 
 #define RESOLVE_TIMEOUT (120 * CLOCK_SECOND)
-
-
 
 
 static struct simple_udp_connection udp_conn;
@@ -38,112 +67,10 @@ static const char *const str_res[] = {
 
 
 // ASW protocol :
-// O -> R me1 = sigO{ Vo, Vr, T, text, Hash(NonceO)  }
-// R -> O me2 = sig {me1, Hash(NonceR)}
-// O -> R me3 = NonceO
-// R -> O me4 = NonceR
-
-typedef enum
-{
-  MSG_TYPE_HELLO,      // Init message ( discovery-braodcast)
-  MSG_TYPE_READY,      // Init message Ready for exchagne (unicast)
-  MSG_TYPE_M1,  // Starting the transcaction
-  MSG_TYPE_M2,    // Respond accorgin to ASW protocol
-  MSG_TYPE_M3,   // nonce of originator
-  MSG_TYPE_M4,  // nonce of Responder
-  MSG_TYPE_FOG,            // Connection with fog-edge discovery message
-  MSG_TYPE_FORWARD // Forward records to the blockchain
-} msg_type;
-typedef enum
-{
-  STATUS_COMPLETE,
-  STATUS_ABORT,
-  STATUS_RESOLVE
-} rec_status;
-
-// ***** Helping Structures *****
-typedef struct __attribute__((__packed__)) msg_header
-{
-  msg_type type;
-  uint8_t data[];
-} msg_header;
-
-typedef struct __attribute__((__packed__)) msg_crypto
-{
-  // uint32_t msg_hash[8];     // hash of the message ->> to sing with ecc
-  ec_point_t point_r;       // ecc - r (x coordinate)
-  // uint32_t signature_o[24]; // ecc - Signature of originator
-  // uint32_t signature_r[24];  // ecc - Signature of respond
-  // short nonce_o; // nonce of originator
-  // short nonce_r; // nonce of responder
-} msg_crypto;
-
-
-typedef struct __attribute__((__packed__)) msg_contex
-{
-  uint16_t originator_id;   // The id of node that stars the transaction
-  uint16_t responder_id;    // The peer node of the trensaction
-  uint16_t smart_contract_id;  // Trusted 3rd party (as part of) Asokan-Shoup-Waidner  protocol
-  uint16_t record_id;        // the independant record
-  uint32_t hash_nonce_o[8]; // nonce(Originator) for the Asokan-Shoup-Waidner protocol
-} msg_contex;
-
-
-
-//***** Main Messages *****
-
-// message-1 of ASW protocol m1 + nonce of O
-typedef struct __attribute__((__packed__)) msg_m1
-{
-  msg_type type;
-  msg_contex context;
-  ec_point_t point_r;    
-  uint32_t signature_o[24]; // ecc - Signature of originator
-} msg_m1;
-
-
-//message-2 of ASW protocol contains the signature of m1 + nonce of R
-typedef struct __attribute__((__packed__)) msg_m2
-{
-   msg_type type;
-  // msg_transction me1;  // the orignal message
-  uint32_t hash_nonce_r[8]; // Nonce(Responde) for the Asokan-Shoup-Waidner protocol
-  uint32_t signature_r[24]; // signature of m1(message of origantator + hash of nonce_r) 
-  // NOTE : in practice the responder just add the hash of nonce_r to orignal mesg
-
-} msg_m2;
-
-typedef struct __attribute__((__packed__)) msg_m3
-{
-  msg_type type;
-  short nonce; // Nonce for the Asokan-Shoup-Waidner protocol
-} msg_m3;
-
-//message-3-4 of ASW contain the nonce
-typedef struct __attribute__((__packed__)) msg_m4
-{
-  msg_type type;
-  short nonce; // Nonce for the Asokan-Shoup-Waidner protocol
-} msg_m4;
-
-typedef struct __attribute__((__packed__)) msg_record
-{
-  msg_m1 m1;
-  msg_m2 m2;
-  short nonce_o;
-  short nonce_r;
-  rec_status status;
-  u_int16_t rec_counter;
-} msg_record;
-
-
-// me2 is only for responder 
-typedef struct __attribute__((__packed__)) me2
-{
-  uint32_t signature_o[24]; // signature of m1(message of origantator + hash of nonce_r)
-  uint32_t hash_nonce_r[8];
-} me2;
-
+// O -> R Msg1 = Sign{ ID-1, ID-2, Text, Hash(NonceO) }
+// R -> O Msg2 = Sign{ Msg1, Hash(NonceR)}
+// O -> R Msg3 = NonceO
+// R -> O Msg4 = NonceR
 
 static rtimer_clock_t time;
 uint16_t buffer_counter = 0;
@@ -167,120 +94,86 @@ udp_rx_callback(struct simple_udp_connection *c,
                 const uint8_t *data,
                 uint16_t datalen)
 {
-  // int i;
   msg_header *msg_rcv = (struct msg_header *)data;
-  printf("MSg : %d\n", msg_rcv->type);
+  
+  
   int i;
 
-  // msg_awp_respond reply_respond;
   msg_m4 reply_nonce;
   msg_header reply_hello;
-  LOG_INFO("Received  from ");
-  LOG_INFO_6ADDR(sender_addr);
-  LOG_INFO_("\n");
-
+  
   switch (msg_rcv->type)
   {
-  //hello message is the broadcast message for neighbor discovery
-  case MSG_TYPE_HELLO:
-  {
-    // LOG_INFO("Received from ");
-    // LOG_INFO_6ADDR(sender_addr);
-    // LOG_INFO_("\n");
-    memcpy(&dest_iot_node, sender_addr, sizeof(uip_ipaddr_t));
-    // LOG_INFO_6ADDR(&dest_iot_node);
-    //   LOG_INFO_("\n");
-
-    // a new node wants to make Transcaction
-    // check if ongoin transaction exists
-    // memcpy(&dest_iot_node,  sender_addr, sizeof(uip_ipaddr_t));
-    //new transction , save ip of other node
-    // A node replies to hello with an EXCHANGE to indicate that is ready to accept transactions
-    reply_hello.type = MSG_TYPE_READY;
-    simple_udp_sendto(&udp_conn, &reply_hello, sizeof(struct msg_header), &dest_iot_node);
-    // printf("rcv: MSG_TYPE_EXCHANGE  and send function: %d \n");
-  }
-  break;
-  // Oginate message has signature of m1 + nonce of R
-  case MSG_TYPE_M1:
-  {
-    //Verification function need to called as thread
-    //he pass the handle to main process using event msg
-    if (tx_free == true)
+  
+    //Hello message is the broadcast message for neighbor discovery
+    case MSG_TYPE_HELLO:
     {
+      // A new node wants to make Transcaction
+      // A node replies to hello with an EXCHANGE to indicate that is ready to accept transactions
       
+      memcpy(&dest_iot_node, sender_addr, sizeof(uip_ipaddr_t));
+      reply_hello.type = MSG_TYPE_READY;
+      simple_udp_sendto(&udp_conn, &reply_hello, sizeof(struct msg_header), &dest_iot_node);
+    }
+    break;
+  
+    // M1: Signature of M1 + Nonce of Responder
+    case MSG_TYPE_M1:
+    {
+      //Verification function need to called as thread
+      //For this reason we pass to handler in Main function as event
+      if (tx_free == true)
+      {
+        memcpy(&msg_buffer.m1, msg_rcv, sizeof(msg_m1));
+        memcpy(&msg_m1_buffer, msg_rcv, sizeof(msg_m1));
+        process_post(&chain_server_process, PROCESS_EVENT_MSG, (process_data_t)&msg_m1_buffer);
+      }
+    }
+    break;
+
+    // M3: Signature of M1 + nonce of R
+    case MSG_TYPE_M3:
+    {
+      etimer_stop(&resolve_period);
+      crypto_init();
+      sha256_state_t state;
+      uint8_t sha256[32];
+      uint32_t sha256_digest[8];
+      int len = sizeof(short);
+      int ret;
+      ret = sha256_init(&state);
+      ret = sha256_process(&state, &((msg_m3 *)msg_rcv)->nonce, len);
+      ret = sha256_done(&state, sha256);
+      printf("sha256_process(): %s\n", str_res[ret]);
       
-      // printf("\n******\n");
-      // struct msg_contex *strucPtr2 = &rcv_m1.context;
-      // unsigned char *charPtr2 = (unsigned char *)strucPtr2;
-      // for (i = 0; i < sizeof(struct msg_contex); i++)
-      //   printf("%02x", charPtr2 [i]);
+      crypto_disable();
 
-
-      memcpy(&msg_buffer.m1, msg_rcv, sizeof(msg_m1));
-      memcpy(&msg_m1_buffer, msg_rcv, sizeof(msg_m1));
-
-printf("\n get m1\n");
-//       struct msg_contex *strucPtr2 = &msg_m1_buffer.context;
-//       unsigned char *charPtr2 = (unsigned char *)strucPtr2;
-//       for (i = 0; i < sizeof(struct msg_contex); i++)
-//         printf("%02x", charP tr2 [i]);
-
-
-      process_post(&chain_server_process, PROCESS_EVENT_MSG, (process_data_t)&msg_m1_buffer);
-      // tx_free = false;
-      // memcpy(&dest_iot_node, sender_addr, sizeof(uip_ipaddr_t));
+      uint32_t *ptr = (uint32_t *)&sha256;
+      int j = 7;
+      for (i = 0; i < 8; i++)
+      {
+        sha256_digest[i] = REV(ptr[j]);
+        // printf("%08lx", REV(ptr[j]));
+        j--;
+      }
+      if (rom_util_memcmp(sha256_digest, msg_buffer.m1.context.hash_nonce_o, sizeof(sha256)))
+      {
+        printf("Nonce not match\n");
+      }
+      else
+      {
+        printf("Nonce_O is OK\n");
+      }
+      reply_nonce.type = MSG_TYPE_M4;
+      reply_nonce.nonce = nonce;
+      simple_udp_sendto(&udp_conn, &reply_nonce, sizeof(struct msg_m4), sender_addr);
+      tx_free = true;
     }
-  }
-  break;
+    break;
 
-  case MSG_TYPE_M3:
-  {
-    // printf("nonce of origin%d\n", ((msg_awp_nonce *)msg_rcv)->nonce);
-    etimer_stop(&resolve_period);
-    crypto_init();
-    sha256_state_t state;
-    uint8_t sha256[32];
-    uint32_t sha256_digest[8];
-    int len = sizeof(short);
-    int ret;
-    ret = sha256_init(&state);
-    ret = sha256_process(&state, &((msg_m3 *)msg_rcv)->nonce, len);
-    ret = sha256_done(&state, sha256);
-    printf("sha256_process(): %s\n", str_res[ret]);
-    
-    crypto_disable();
-
-    uint32_t *ptr = (uint32_t *)&sha256;
-    int j = 7;
-    for (i = 0; i < 8; i++)
-    {
-      sha256_digest[i] = REV(ptr[j]);
-      printf("%08lx", REV(ptr[j]));
-      j--;
+    default: /* Optional */
+      printf("Undifined msg type\n");
     }
-
-    // printf("sha256_done(): %s \n", str_res[ret]);
-    //to_send.m_crypto.hash_256 = sha256;
-    if (rom_util_memcmp(sha256_digest, msg_buffer.m1.context.hash_nonce_o, sizeof(sha256)))
-    {
-      printf("nonce not match");
-    }
-    else
-    {
-      printf("NonceO hash OK\n");
-    }
-    puts("----------------");
-    reply_nonce.type = MSG_TYPE_M4;
-    reply_nonce.nonce = nonce;
-    simple_udp_sendto(&udp_conn, &reply_nonce, sizeof(struct msg_m4), sender_addr);
-    tx_free = true;
-  }
-  break;
-
-  default: /* Optional */
-    printf("Undifined msg type\n");
-  }
 
  
 }

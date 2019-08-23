@@ -1,3 +1,33 @@
+/*
+ * Copyright (c) 2019, Christos Profentzas - www.chalmers.se/~chrpro 
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 #ifndef OFFCHAIN_MESSAGE_H
 #define OFFCHAIN_MESSAGE_H
 
@@ -5,11 +35,11 @@ typedef enum
 {
   MSG_TYPE_HELLO,      // Init message ( discovery-braodcast)
   MSG_TYPE_READY,      // Init message Ready for exchagne (unicast)
-  MSG_TYPE_M1,  // Starting the transcaction
-  MSG_TYPE_M2,    // Respond accorgin to ASW protocol
-  MSG_TYPE_M3,   // nonce of originator
-  MSG_TYPE_M4,  // nonce of Responder
-  MSG_TYPE_FOG,            // Connection with fog-edge discovery message
+  MSG_TYPE_M1,         // Starting the transcaction
+  MSG_TYPE_M2,         // Respond accorgin to ASW protocol
+  MSG_TYPE_M3,         // nonce of originator
+  MSG_TYPE_M4,         // nonce of Responder
+  MSG_TYPE_FOG,        // Connection with fog-edge discovery message
   MSG_TYPE_FORWARD // Forward records to the blockchain
 } msg_type;
 typedef enum
@@ -71,20 +101,21 @@ typedef struct __attribute__((__packed__)) msg_m2
 
 } msg_m2;
 
+//Message 3 of ASW Protocol: Nonce of Reposnder
 typedef struct __attribute__((__packed__)) msg_m3
 {
   msg_type type;
   short nonce; // Nonce for the Asokan-Shoup-Waidner protocol
 } msg_m3;
 
-//message-3-4 of ASW contain the nonce
+//Message 3 of ASW Protocol: Nonce of Originator
 typedef struct __attribute__((__packed__)) msg_m4
 {
   msg_type type;
   short nonce; // Nonce for the Asokan-Shoup-Waidner protocol
 } msg_m4;
 
-
+// A complete Transaction 
 typedef struct __attribute__((__packed__)) msg_record
 {
   msg_m1 m1;
@@ -94,5 +125,14 @@ typedef struct __attribute__((__packed__)) msg_record
   rec_status status;
   u_int16_t rec_counter;
 } msg_record;
+
+
+
+// me2 is only for responder 
+typedef struct __attribute__((__packed__)) me2
+{
+  uint32_t signature_o[24]; // signature of m1(message of origantator + hash of nonce_r)
+  uint32_t hash_nonce_r[8];
+} me2;
 
 #endif

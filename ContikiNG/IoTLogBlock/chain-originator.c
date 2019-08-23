@@ -1,3 +1,34 @@
+/*
+ * Copyright (c) 2019, Christos Profentzas - www.chalmers.se/~chrpro 
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE
+ * COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #include "contiki.h"
 #include "random.h"
 #include "net/ipv6/simple-udp.h"
@@ -524,164 +555,3 @@ PROCESS_THREAD(chain_client_process, ev, data)
 
   PROCESS_END();
 }
-/*
-
-  // printf("sha256_init(): %s \n", str_res[ret]);
-  // ret = sha256_process(&state, &to_send.body, len);
-
-  // ret = sha256_done(&state, sha256);
-
-  // printf("sha256_done(): %s \n", str_res[ret]);
-
-  // printf("\n unfliped h:");
-  // printf("\n.hash:");
-  // for (i = 0; i < 32; i++)
-  // {
-  //   printf("%02x", sha256[i]);
-  // }
-  // printf("\n");
-
-  // uint32_t *ptr = (uint32_t *)&sha256; //cast the 8bit pointer to an 32bit pointer
-  //flip the hash bit (order of uint32_t)
-  //the first 8 bytes will be used, the others are padding of 0s
-  // int j = 7;
-  // for (i = 0; i < 8; i++)
-  // {
-  //   to_send.crypto.msg_hash[i] = REV(ptr[j]);
-  //   j--;
-  // }
-
-  // for (i = 0; i < 8; i++)
-  // {
-  //   sign_state.hash[i] = sha256[i];
-  // }
-
-  // PT_SPAWN(&(chain_client_process.pt), &(sign_state.pt), ecc_dsa_sign(&sign_state));
-  // // printf("\n ecc_dsa_sign() %s \n",str_res[sign_state2.result]);
-  // to_send.crypto.point_r = sign_state.point_r;
-  // memcpy(to_send.crypto.signature_s, sign_state.signature_s, sizeof(sign_state.signature_s));
-
-  // printf("signature\n");
-  // printf("h:");
-  // for (i = 0; i < 8; i++)
-  // {
-  //   printf("%08lx", sign_state.hash[i]);
-  // }
-  // printf("\nr:");
-  // for (i = 7; i >= 0; i--)
-  // {
-  //   printf("%08lx", sign_state.point_r.x[i]);
-  // }
-  // printf("\ns:");
-  // for (i = 7; i >= 0; i--)
-  // {
-  //   printf("%08lx", sign_state.signature_s[i]);
-  // }
-  // printf("\n");
-  // printf("/signature\n");
-
-  // crypto_disable();
-  // pka_disable();
-
-
-    // printf("%02x", reply.type);
-          //  printf("\n");
-          // printf("%04x", reply.body.me1.originator_id);
-          // printf("\n");
-          // printf("%04x", reply.body.me1.responder_id);
-          // // printf("\n");
-          // printf("%04x", reply.body.me1.smart_contract);
-          // // printf("\n");
-          // printf("%04x", reply.body.me1.cargo_id);
-          // // printf("\n");
-          // for(i=0;i<8;i++)
-          // printf("%08lx", reply.body.me1.hash_nonce_o[i]);
-          // // printf("\n");
-
-          // for(i=0;i<8;i++)
-          // printf("%08lx", reply.body.crypto.msg_hash[i]);
-          // // printf("point x \n");
-          // for(i=0;i<12;i++)
-          // printf("%08lx", reply.body.crypto.point_r.x[i]);
-          // // printf("point y \n");
-          // for(i=0;i<12;i++)
-          // printf("%08lx", reply.body.crypto.point_r.y[i]);
-          // // printf(" sign \n");
-          // for(i=0;i<24;i++)
-          // printf("%08lx", reply.body.crypto.signature_s[i]);
-          // // printf("\n");
-          // printf("%04x", reply.body.crypto.nonce_o);
-          // // printf("\n");
-          // printf("%04x", reply.body.crypto.nonce_r);
-
-              //  puts("----------------");
-          //         uint32_t *ptr = (uint32_t *)&sha256;
-          //         int j = 7;
-          //         for (i = 0; i < 8; i++)
-          //         {
-          //           sha256_digest[i] = REV(ptr[j]);
-          //           printf("%08lx", REV(ptr[j]));
-          //           j--;
-          //         } puts("----------------");
-
-          // printf("sha256_done(): %s \n", str_res[ret]);
-          //to_send.m_crypto.hash_256 = sha256;
-
-                  // printf("\n ecc_dsa_sign() %s \n", str_res[sign_state.result]);
-          // printf("signature\n");
-          // printf("h:");
-          // for (i = 0; i < 8; i++)
-          // {
-          //   printf("%08lx", sign_state.hash[i]);
-          // }
-          // printf("\nr:");
-          // for (i = 7; i >= 0; i--)
-          // {
-          //   printf("%08lx", sign_state.point_r.x[i]);
-          // }
-          // printf("\ns:");
-          // for (i = 7; i >= 0; i--)
-          // {
-          //   printf("%08lx", sign_state.signature_s[i]);
-          // }
-          // printf("\n");
-          // printf("/signature\n");
-
-              // int i;
-      // printf("\n The hash of nonce is : \n");
-      // for (i = 0; i < 8; i++)
-      // {
-      //   printf("%08lx", r_hash->body.hash_nonce_r[i]);
-      // }
-      // printf("\n---\n");
-
-              // struct msg_contex *strucPtr = &reply_m1.context;
-          // unsigned char *charPtr = (unsigned char *)strucPtr;
-          // for (i = 0; i < sizeof(struct msg_contex); i++)
-          //   {printf("%02x", charPtr[i]);}
-          //   printf("\n");
-
-          // NOTE! in sign state the hash is different type : uint32_t hash[12]
-          // NOTE! the digest (output) of  sh256 is : uint8_t  buf[64];
-
-          //cast the 8bit pointer to an 32bit pointer
-          
-          //flip the hash bit (order of uint32_t)
-          //the first 8 bytes will be used, the other is padding of 0s
-          //Also the output is in reverse bit-order, REV Macro flips the bits
-          // i=0
-
-          // printf("\n The hash of nonce is : \n");
-          // for (i = 0; i < 32; i++)
-          // {
-          //   printf("%02x", sha256_digest[i]);
-          // }
-          // printf("\n---\n");
-        
-          // j = 7;
-          // for (i = 0; i < 8; i++)
-          // {
-          //   // reply_m1.context.hash_nonce_o[i] = ptr[j];
-          //   printf("%08lx", ptr[j]);
-          //   j--;
-*/
