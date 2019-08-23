@@ -15,6 +15,7 @@ In this paper, we present IoTLogBlock to address these challenges, which connect
 ## Implementation
 
 We implement the contract signing protocol, in <b>C</b> for the <b>Contiki-NG OS</b>.
+
 We implement the smart contrac in <b>GO</b> for <b>Hyperledger-Fabric</b>.  
 
 We support Texas Instruments CC2538 SoC.
