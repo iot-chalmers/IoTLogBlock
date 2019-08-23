@@ -43,7 +43,7 @@
 #include <stdbool.h>
 #include "Offchain-message.h"
 
-// #define CONSTANT_CONNECTIVITY 
+// #define CONSTANT_CONNECTIVITY
 #define MEASURE_ENERGY
 
 #define LOG_MODULE "Chain-Orig"
@@ -52,7 +52,7 @@
 #define UDP_SERVER_PORT 5678
 #define MAX_TXS 30
 
-//REV reversve the byte order 
+//REV reversve the byte order
 #define REV(X) ((X << 24) | ((X & 0xff00) << 8) | ((X >> 8) & 0xff00) | (X >> 24))
 #define GENERATION_INTERVAL (10 * CLOCK_SECOND)
 #define START_INTERVAL (0.001 * CLOCK_SECOND)
@@ -61,7 +61,6 @@
 #define RESOLVE_TIMEOUT (120 * CLOCK_SECOND)
 #define ABORD_TIMEOUT (120 * CLOCK_SECOND)
 #define NODE_ID 1
-
 
 static int memory_max = 0;
 static uint16_t droped_rec = 0;
@@ -78,9 +77,8 @@ to_seconds(uint64_t time)
 }
 #endif
 
-
 static uint32_t buffer_counter = 0;
-static msg_record  buffer[MAX_TXS];
+static msg_record buffer[MAX_TXS];
 static msg_header msg_buffer;
 static msg_record complete_rec;
 static uip_ipaddr_t dest_iot_node = {{0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}};
@@ -108,7 +106,6 @@ udp_rx_callback(struct simple_udp_connection *c,
   case MSG_TYPE_READY:
   {
     // check if there is ongoing transcation
-    // only one transction can be made each sesssion
     if (tx_free == true)
     {
       // new transction , save ip of other node
@@ -127,12 +124,6 @@ udp_rx_callback(struct simple_udp_connection *c,
   //the Responder send the m2
   case MSG_TYPE_M2:
   {
-
-    // msg_m2 * r_m2 = (struct msg_m2 *)data;
-
-    
-    // memcpy(&complete_rec.body.hash_nonce_r, r_hash->body.hash_nonce_r, sizeof(uint32_t) * 8);
-    // memcpy(&complete_rec.body.crypto.signature_r ,r_hash->body.signature_r, sizeof(uint32_t) * 24);
     memcpy(&msg_buffer, msg_rcv, sizeof(msg_rcv));
     process_post(&chain_client_process, PROCESS_EVENT_MSG, (process_data_t)&msg_buffer);
   }
@@ -140,14 +131,8 @@ udp_rx_callback(struct simple_udp_connection *c,
 
   case MSG_TYPE_M4:
   {
-
     memcpy(&msg_buffer, msg_rcv, sizeof(msg_rcv));
     process_post(&chain_client_process, PROCESS_EVENT_MSG, (process_data_t)&msg_buffer);
-
-    // printf("MSG_TYPE_NONCE_RPD, type: %d\n", ((msg_chain *)msg_rcv)->type);
-    // // need to send the nonce O
-    // for (i = 0; i < 7; i++)
-    //   printf("nonce1: %ld \n", ((msg_awp_resp *)msg_rcv)->hash_nonce_r[i]);
   }
   break;
 
@@ -160,13 +145,11 @@ udp_rx_callback(struct simple_udp_connection *c,
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(chain_client_process, ev, data)
 {
-  static struct etimer periodic_hello, edge_connection;//abord_period, resolve_period, ;
+  static struct etimer periodic_hello, edge_connection;
   static unsigned count;
-  // static int i,j;
   static msg_m1 reply_m1;
   static msg_m3 reply_m3;
   static short nonce;
-
   static sha256_state_t sha256_state;
   static uint8_t sha256_digest[32];
   static uint8_t ret;
@@ -194,13 +177,11 @@ PROCESS_THREAD(chain_client_process, ev, data)
 
   while (1)
   {
-    // printf ("size of m1 = %d\n",sizeof(struct msg_m1));
-    // printf ("size of record= %d\n",sizeof(struct msg_record));
-
-
-    PROCESS_WAIT_EVENT(); //_UNTIL((ev == PROCESS_EVENT_TIMER) || (ev == PROCESS_EVENT_MSG)); //etimer_expired(&periodic_timer)
-    // Update all energest times.
-  #ifdef MEASURE_ENERGY 
+    
+    PROCESS_WAIT_EVENT(); 
+    
+// Update all energest times.
+#ifdef MEASURE_ENERGY
     energest_flush();
 
     printf("\nEnergest:\n");
@@ -227,12 +208,14 @@ PROCESS_THREAD(chain_client_process, ev, data)
       if (msg_rcv->type == MSG_TYPE_READY)
       {
         record_counter++;
-        printf("<rec_timestamp>%ld\n",record_counter);
+        printf("<rec_timestamp>%ld\n", record_counter);
         //start measure the time for protocol to complete
         total_time = RTIMER_NOW();
-        //start a transation process
-        // etimer_set(&abord_period, ABORD_TIMEOUT);
 
+#ifdef ABORT_SUB_PROTOCOL
+        //start a transation process
+        etimer_set(&abord_period, ABORD_TIMEOUT);
+#endif
         //IMPORTANT! neet to init crypto coprocessor before use
         crypto_init();
         pka_init();
@@ -241,78 +224,52 @@ PROCESS_THREAD(chain_client_process, ev, data)
         reply_m1.type = MSG_TYPE_M1;
         reply_m1.context.originator_id = 1;
         reply_m1.context.responder_id = 2;
-        reply_m1.context.smart_contract_id =3;
+        reply_m1.context.smart_contract_id = 3;
         reply_m1.context.record_id = 4;
         nonce = random_rand();
         len = sizeof(short);
-        // printf("Nonce of originator :%d\n",nonce);
 
-        // printf("structure size : %du bytes\n", sizeof(struct msg_body));
-        // for (i = 0; i < sizeof(struct msg_body); i++)
-        //   printf("%02x", charPtr[i]);
-
-        // time = RTIMER_NOW();
+        time = RTIMER_NOW();
         //Check if the initialization was successfull
         ret = sha256_init(&sha256_state);
-        // printf("sha256_init(): %s \n", str_res[ret]);
         ret = sha256_process(&sha256_state, &nonce, len);
-        // printf("sha256_process(): %s\n", str_res[ret]);
         ret = sha256_done(&sha256_state, sha256_digest);
 
-        // time = RTIMER_NOW() - time;
-        // printf("sha256 - nonce time: , %lu ms\n",
-        //        (uint32_t)((uint64_t)time * 10000 / RTIMER_SECOND));
-
-        // printf("\nHash of nonce :\n");
         ptr = (uint32_t *)&sha256_digest;
-         int i;
+        int i;
         int j = 7;
         for (i = 0; i < 8; i++)
         {
-          reply_m1.context.hash_nonce_o[i] = REV(ptr[j]);;
-          // printf("%08lx", reply_m1.context.hash_nonce_o[i] );
+          reply_m1.context.hash_nonce_o[i] = REV(ptr[j]);
+          ;
           j--;
         }
-        // printf("\n.\n");
 
-
-        // 
         len = sizeof(struct msg_contex);
-        // time = RTIMER_NOW();
+        time = RTIMER_NOW();
         ret = sha256_init(&sha256_state);
-        // printf("sha256_init(): %s \n", str_res[ret]);
         ret = sha256_process(&sha256_state, &reply_m1.context, len);
         printf("sha256_process(): %d\n", ret);
-        // ret = sha256_done(&sha256_state, &sha256_digest[0]);
         ret = sha256_done(&sha256_state, sha256_digest);
 
-        // time = RTIMER_NOW() - time;
-        // printf("sha256 - reply.body.me1 ,  time: , %lu ms\n",
-        //        (uint32_t)((uint64_t)time * 1000 / RTIMER_SECOND));
+        time = RTIMER_NOW() - time;
+        printf("sha256 - reply.body.me1 ,  time: , %lu ms\n",
+               (uint32_t)((uint64_t)time * 1000 / RTIMER_SECOND));
 
-        // struct msg_transction *strucPtr = &reply.body.me1;
-        // unsigned char *charPtr = (unsigned char *)strucPtr;
-        // printf("structure size : %d bytes\n", sizeof(struct msg_transction));
-        // printf("hex:\n");
-        // for (i = 0; i < sizeof(struct msg_transction); i++)
-        //   printf("%02x", charPtr[i]);
 
-        // printf("\nhash of signature: ");
-        // printf("\n");
-        // printf("hash(): %s \n", str_res[ret]);
         // This is how should print the hash to test from other program
         // in contiki the hash is used in revered bit-order
-        
+        printf("\nHash of signature: \n");
+
         ptr = (uint32_t *)&sha256_digest;
-        j=7;
+        j = 7;
         for (i = 0; i < 8; i++)
         {
           sign_state.hash[i] = REV(ptr[j]);
-          // printf("%08lx", REV(ptr[i]));
+          printf("%08lx", REV(ptr[i]));
           j--;
         }
-
-        // printf("\n---\n");
+        printf("\n-------------------\n");
         time = RTIMER_NOW();
         PT_SPAWN(&(chain_client_process.pt), &(sign_state.pt), ecc_dsa_sign(&sign_state));
         time = RTIMER_NOW() - time;
@@ -324,24 +281,22 @@ PROCESS_THREAD(chain_client_process, ev, data)
         memcpy(&complete_rec, &reply_m1, sizeof(msg_m1));
 
         //copy the reply message to global  buffer complete_tx
-      
+
         complete_rec.nonce_o = nonce;
 
         crypto_disable();
         pka_disable();
         simple_udp_sendto(&udp_conn, &reply_m1, sizeof(struct msg_m1), &dest_iot_node);
-       
-
       }
       else if (msg_rcv->type == MSG_TYPE_M2)
       {
-        //responder send m2 
+        //responder send m2
         // printf("got m2\n");
         //stop abort timeout
         // etimer_stop(&abord_period);
         //start resolving timeout
         // etimer_set(&resolve_period, RESOLVE_TIMEOUT);
-        memcpy(&complete_rec.m2, msg_rcv, sizeof(msg_m2) );
+        memcpy(&complete_rec.m2, msg_rcv, sizeof(msg_m2));
         reply_m3.type = MSG_TYPE_M3;
         reply_m3.nonce = nonce;
         simple_udp_sendto(&udp_conn, &reply_m3, sizeof(struct msg_m3), &dest_iot_node);
@@ -370,18 +325,17 @@ PROCESS_THREAD(chain_client_process, ev, data)
           j--;
         }
 
-        if ( rom_util_memcmp(sha256_digest, &complete_rec.nonce_r, sizeof(sha256)) )
+        if (rom_util_memcmp(sha256_digest, &complete_rec.nonce_r, sizeof(sha256)))
         {
-          // printf("NonceR not match");
+          printf("NonceR not match");
         }
         else
         {
-          // printf("NonceR hash OK\n");
+          printf("NonceR hash OK\n");
         }
         puts("----------------");
 
-        // printf("Protocol done! tx Counter: %ld\n", record_counter);
-        
+
         total_time = RTIMER_NOW() - total_time;
         printf("procol overall time: , %lu ms\n",
                (uint32_t)((uint64_t)total_time * 1000 / RTIMER_SECOND));
@@ -389,60 +343,62 @@ PROCESS_THREAD(chain_client_process, ev, data)
         complete_rec.nonce_r = ((msg_m4 *)msg_rcv)->nonce;
         complete_rec.status = STATUS_COMPLETE;
         complete_rec.rec_counter = record_counter;
-        if(buffer_counter < MAX_TXS){
-          buffer[buffer_counter] = complete_rec; 
+        if (buffer_counter < MAX_TXS)
+        {
+          buffer[buffer_counter] = complete_rec;
           buffer_counter++;
-          printf("buffer counter : %ld\n",buffer_counter);
+          printf("Buffer counter : %ld\n", buffer_counter);
         }
-        else{
+        else
+        {
           droped_rec++;
-          printf("Record Droped :%d \n",droped_rec);
-
+          printf("Record Droped :%d \n", droped_rec);
         }
-        if(buffer_counter > memory_max){
+        if (buffer_counter > memory_max)
+        {
           memory_max = buffer_counter;
-          //  printf(" memory_max : %d\n",memory_max);
         }
-        #ifdef CONSTANT_CONNECTIVITY
-          printf("<transcation>\n");
-          printf("%d\n",complete_rec.rec_counter);
-          printf("%d\n",node_id);
-          struct msg_record *strucPtr = &complete_rec;
-          unsigned char *charPtr = (unsigned char *)strucPtr;
-          for (i = 0; i < sizeof(struct msg_record); i++){
-            printf("%02x", charPtr[i]);
-          }
-          printf("\n");
-          //hex hash of nonce of respond
-          uint32_t * hashPtr = complete_rec.m2.hash_nonce_r;
-          charPtr = (unsigned char *)hashPtr;
-          // printf("structure size : %d bytes\n", sizeof(struct msg_transction));
-          // printf("\n");//hex:
-          for (i = 0; i < sizeof(uint32_t) * 8; i++)
-            printf("%02x", charPtr[i]);
+#ifdef CONSTANT_CONNECTIVITY
+        printf("<transcation>\n");
+        printf("%d\n", complete_rec.rec_counter);
+        printf("%d\n", node_id);
+        struct msg_record *strucPtr = &complete_rec;
+        unsigned char *charPtr = (unsigned char *)strucPtr;
+        for (i = 0; i < sizeof(struct msg_record); i++)
+        {
+          printf("%02x", charPtr[i]);
+        }
+        printf("\n");
+        //hex hash of nonce of respond
+        uint32_t *hashPtr = complete_rec.m2.hash_nonce_r;
+        charPtr = (unsigned char *)hashPtr;
+        // printf("structure size : %d bytes\n", sizeof(struct msg_transction));
+        // printf("\n");//hex:
+        for (i = 0; i < sizeof(uint32_t) * 8; i++)
+          printf("%02x", charPtr[i]);
 
-          printf("\n");
+        printf("\n");
 
-          // signature
-          for (i = 7; i >= 0; i--)
-          {
-            printf("%08lx", complete_rec.m1.signature_o[i]);
-          }
-          printf("\n");
-          // signature
-          for (i = 7; i >= 0; i--)
-          {
-            printf("%08lx", complete_rec.m2.signature_r[i]);
-          }
-          printf("\n");
-          //Nonce of Origin
-          printf("%d", complete_rec.nonce_o);
-          printf("\n");
-          //Nonce of Responder
-          printf("%d", complete_rec.nonce_r);
-          printf("\n");
-          printf("</transcation>\n");
-        #endif
+        // signature
+        for (i = 7; i >= 0; i--)
+        {
+          printf("%08lx", complete_rec.m1.signature_o[i]);
+        }
+        printf("\n");
+        // signature
+        for (i = 7; i >= 0; i--)
+        {
+          printf("%08lx", complete_rec.m2.signature_r[i]);
+        }
+        printf("\n");
+        //Nonce of Origin
+        printf("%d", complete_rec.nonce_o);
+        printf("\n");
+        //Nonce of Responder
+        printf("%d", complete_rec.nonce_r);
+        printf("\n");
+        printf("</transcation>\n");
+#endif
       }
     }
     else if (ev == PROCESS_EVENT_TIMER)
@@ -454,102 +410,95 @@ PROCESS_THREAD(chain_client_process, ev, data)
         to_send.type = MSG_TYPE_HELLO;
         printf("\nSending request %u ", count);
         printf("\n");
-        /* Set the number of transmissions to use for this packet -
-         this can be used to create more reliable transmissions or
-         less reliable than the default. Works end-to-end if
-         UIP_CONF_TAG_TC_WITH_VARIABLE_RETRANSMISSIONS is set to 1.
-       */
-        // uipbuf_set_attr(UIPBUF_ATTR_MAX_MAC_TRANSMISSIONS, 1 + count % 5);
         simple_udp_sendto(&udp_conn, &to_send, sizeof(struct msg_header), &dest_iot_node);
         count++;
         /* Add some jitter */
         etimer_set(&periodic_hello, GENERATION_INTERVAL - CLOCK_SECOND + (random_rand() % (2 * CLOCK_SECOND)));
       }
-      if (etimer_expired(&edge_connection) )
+      if (etimer_expired(&edge_connection))
       {
-        printf("edge periodic connection\n");
+        // printf("Edge periodic connection\n");
         etimer_set(&edge_connection, EDGE_CONNECTION);
-        
-         if (buffer_counter > 0 ){
-            #ifndef CONSTANT_CONNECTIVITY
-            int transmit_record;
-            for (transmit_record = 0; transmit_record < buffer_counter;transmit_record++)
-            {  //buffer[buffer_counter] = complete_rec; 
-              
-              printf("<transcation>\n");
-              printf("%d\n",buffer[transmit_record].rec_counter);
-              printf("%d\n",node_id);
-              struct msg_record *strucPtr = &buffer[transmit_record];
-              unsigned char *charPtr = (unsigned char *)strucPtr;
-              int i;
-              for (i = 0; i < sizeof(struct msg_record); i++){
-                printf("%02x", charPtr[i]);
-              }
-              printf("\n");
-              //hex hash of nonce of respond
-              uint32_t * hashPtr = buffer[transmit_record].m2.hash_nonce_r;
-              charPtr = (unsigned char *)hashPtr;
-              // printf("structure size : %d bytes\n", sizeof(struct msg_transction));
-              // printf("\n");//hex:
-              for (i = 0; i < sizeof(uint32_t) * 8; i++)
-                printf("%02x", charPtr[i]);
 
-              printf("\n");
+        if (buffer_counter > 0)
+        {
+#ifndef CONSTANT_CONNECTIVITY
+          int transmit_record;
+          for (transmit_record = 0; transmit_record < buffer_counter; transmit_record++)
+          {
 
-              // signature
-              for (i = 7; i >= 0; i--)
-              {
-                printf("%08lx", buffer[transmit_record].m1.signature_o[i]);
-              }
-              printf("\n");
-              // signature
-              for (i = 7; i >= 0; i--)
-              {
-                printf("%08lx", buffer[transmit_record].m2.signature_r[i]);
-              }
-              printf("\n");
-              //Nonce of Origin
-              printf("%d", buffer[transmit_record].nonce_o);
-              printf("\n");
-              //Nonce of Responder
-              printf("%d", buffer[transmit_record].nonce_r);
-              printf("\n");
-              printf("</transcation>\n");
-            
-        
-            
-
+            printf("<transcation>\n");
+            printf("%d\n", buffer[transmit_record].rec_counter);
+            printf("%d\n", node_id);
+            struct msg_record *strucPtr = &buffer[transmit_record];
+            unsigned char *charPtr = (unsigned char *)strucPtr;
+            int i;
+            for (i = 0; i < sizeof(struct msg_record); i++)
+            {
+              printf("%02x", charPtr[i]);
             }
-            #endif
-            buffer_counter=0;
-           
-         }
+            printf("\n");
+            //Hex hash of nonce of respond
+            uint32_t *hashPtr = buffer[transmit_record].m2.hash_nonce_r;
+            charPtr = (unsigned char *)hashPtr;
+            for (i = 0; i < sizeof(uint32_t) * 8; i++){
+              printf("%02x", charPtr[i]);
+            }
+            printf("\n");
+
+            //Signature of Originator
+            for (i = 7; i >= 0; i--)
+            {
+              printf("%08lx", buffer[transmit_record].m1.signature_o[i]);
+            }
+            printf("\n");
+            //Signature of Responder
+            for (i = 7; i >= 0; i--)
+            {
+              printf("%08lx", buffer[transmit_record].m2.signature_r[i]);
+            }
+            printf("\n");
+            //Nonce of Origin
+            printf("%d", buffer[transmit_record].nonce_o);
+            printf("\n");
+            //Nonce of Responder
+            printf("%d", buffer[transmit_record].nonce_r);
+            printf("\n");
+            printf("</transcation>\n");
+          }
+#endif
+          buffer_counter = 0;
+        }
       }
 
+//Abort sub-prtoocol
+#ifdef ABORT_SUB_PROTOCOL
+      if (etimer_expired(&abord_period))
+      {
+        printf("Abort Sub-Protocol Timer Expired!\n");
+        //clear transaction
+        //check flag - > abord the protocol
+        complete_rec.status = STATUS_ABORT;
+        buffer[buffer_counter] = complete_rec;
+        buffer_counter++;
+        tx_free = true;
+      }
+#endif
 
-
-      // if (etimer_expired(&abord_period))
-      // {
-      //   // sing protol is incomplete
-      //   printf("ABORD timer expired \n");
-      //   //clear transaction
-      //   //check flag - > abord the protocol
-      //   // complete_rec.status = STATUS_ABORT;
-      //   // buffer[buffer_counter] = complete_rec; 
-      //   // buffer_counter++;
-      //   tx_free = true;
-      // }
-      // if (etimer_expired(&resolve_period))
-      // {
-      //   // sing protol is incomplete
-      //   printf("RESOLVE timer expired \n");
-      //   //clear transaction
-      //   //check flag - > abord the protocol
-      //   // complete_rec.status = STATUS_RESOLVE;
-      //   // buffer[buffer_counter] = complete_rec; 
-      //   // buffer_counter++;
-      //   tx_free = true;
-      // }
+//Resolve sub-protocol
+#ifdef RESOLVE_PROTOCOL
+      if (etimer_expired(&resolve_period))
+      {
+        // sing protol is incomplete
+        printf("Resolce Sub-Protocol\n");
+        //clear transaction
+        //check flag - > abord the protocol
+        complete_rec.status = STATUS_RESOLVE;
+        buffer[buffer_counter] = complete_rec;
+        buffer_counter++;
+        tx_free = true;
+      }
+#endif
     }
   }
 
