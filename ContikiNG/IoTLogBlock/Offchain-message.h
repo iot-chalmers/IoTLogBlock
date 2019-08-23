@@ -31,6 +31,15 @@
 #ifndef OFFCHAIN_MESSAGE_H
 #define OFFCHAIN_MESSAGE_H
 
+
+static const char *const str_res[] = {
+    "success",
+    "invalid param",
+    "NULL error",
+    "resource in use",
+    "DMA bus error"
+};
+    
 typedef enum
 {
   MSG_TYPE_HELLO,      // Init message ( discovery-braodcast)
@@ -125,7 +134,6 @@ typedef struct __attribute__((__packed__)) msg_record
   rec_status status;
   u_int16_t rec_counter;
 } msg_record;
-
 
 
 // me2 is only for responder 
