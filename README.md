@@ -24,6 +24,7 @@ We support Texas Instruments CC2538 SoC.
 
 ### Contract Signing Protocol code
 Under [ContikiNG/IoTLogBlock](./ContikiNG/IoTLogBlock/).
+
 ![IoTLogBlock](./ContikiNG/IoT-Leadger.png)
 
 The Originator of the protocol logic: [ContikiNG/IoTLogBlock/chain-originator.c](./ContikiNG/IoTLogBlock/chain-originator.c). 
