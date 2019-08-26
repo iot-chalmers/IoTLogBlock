@@ -1,5 +1,5 @@
 # IoTLogBlock 
-Source code of the IoTLogBlock Achitecture that will be published in 44th IEEE - LCN 2019 conference.
+Source code of the IoTLogBlock Achitecture (to be published) in <b>44th IEEE - LCN 2019</b>conference.
 # Recording Off-line Transactions of Low-Power IoT Devices Using a Blockchain
 <b>Chistos Profentzas</b>, Olaf Landsiedel, and Magnus Almgren. 2019. 
 _In Proceedings of the International Conference on Local Computer Networks (LCN)_.
