@@ -5,6 +5,8 @@ Source code of the IoTLogBlock Achitecture (to be published) in <b>44th IEEE - L
 _In Proceedings of the International Conference on Local Computer Networks (LCN)_.
 [paper](https://research.chalmers.se/en/publication/511927), [talk](./.pdf).
 
+![IoTLogBlock](./ContikiNG/IoT-Leadger.png)
+
 ## Abstract
 
 For any distributed system, and especially for the Internet of Things, recording interactions between devices is essential. 
@@ -24,8 +26,6 @@ We support Texas Instruments CC2538 SoC.
 
 ### Contract Signing Protocol code
 Under [ContikiNG/IoTLogBlock](./ContikiNG/IoTLogBlock/).
-
-![IoTLogBlock](./ContikiNG/IoT-Leadger.png)
 
 The Originator of the protocol logic: [ContikiNG/IoTLogBlock/chain-originator.c](./ContikiNG/IoTLogBlock/chain-originator.c). 
 
