@@ -18,7 +18,9 @@ In this paper, we present IoTLogBlock to address these challenges, which connect
 
 We implement the contract signing protocol, in <b>C</b> for the <b>Contiki-NG OS</b>.
 
-We implement the smart contrac in <b>GO</b> for <b>Hyperledger-Fabric</b>.  
+We implement the smart contract in <b>GO</b> for <b>Hyperledger-Fabric</b>.
+
+We implement the API to interact with the smart contract in <b>Node.JS</b>.
 
 We support Texas Instruments CC2538 SoC.
 
@@ -33,7 +35,7 @@ The Responder of the protocol logic: [ContikiNG/IoTLogBlock/chain-responder.c](.
 
 
 ### Node.JS and Python Scripts
-For Sending transcation to the Hyperledger Network:
+For Sending transaction to the Hyperledger Network:
 
 ### Configuring, Compiling, Flashing and Running on HW
 
