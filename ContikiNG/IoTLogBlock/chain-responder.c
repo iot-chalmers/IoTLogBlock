@@ -57,14 +57,6 @@
 
 static struct simple_udp_connection udp_conn;
 
-static const char *const str_res[] = {
-    "success",
-    "invalid param",
-    "NULL error",
-    "resource in use",
-    "DMA bus error"};
-
-
 
 // ASW protocol :
 // O -> R Msg1 = Sign{ ID-1, ID-2, Text, Hash(NonceO) }
