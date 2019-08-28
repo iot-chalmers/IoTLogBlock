@@ -1,5 +1,3 @@
-Origin ->
-Originator ->
 
 Here is the AWP protocol 
 
