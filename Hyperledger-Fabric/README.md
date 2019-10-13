@@ -2,4 +2,4 @@
 The IoTLogBlock has the smart contract for the Hyperledger-Fabric
 
 ##
-![HyperLedger](./Hyperledger-Fabric/Fabric_Network.pdf)
+![HyperLedger](./Fabric_Network.pdf)
