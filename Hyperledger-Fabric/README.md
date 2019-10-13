@@ -1,3 +1,5 @@
 ## Hyperledger Fabric - Network and Implementation for IoTLogBlock
+The IoTLogBlock has the smart contract for the Hyperledger-Fabric
 
-##	Code will be available soon (latest 13th Octomber)
+##
+![IoTLogBlock](./Hyperledger-Fabric/IoTLoGBlock.png)
