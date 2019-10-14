@@ -2,6 +2,7 @@
 The IoTLogBlock has the smart contract for the Hyperledger-Fabric
 
 ## File Structure
+<p align="center">
 IoTLogBlock.go -> The smart contract which validates and resolves issues for the off-line transactions
 
 enrollAdmin.js -> Nodejs script to install a register a fabric client to interact with the Fabric
@@ -13,7 +14,7 @@ query.js -> Query (example script) regarding the IoT devices that are registered
 tx_query.js -> Query (example script) regarding the IoT transactions to the smart contract
 
 readserial.py -> Example of reading serial data and invoke the NodeJS examples
-
+</p>
 ##
 ![HyperLedger](./Fabric_Network.png)
 
